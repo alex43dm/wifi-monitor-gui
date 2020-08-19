@@ -1,0 +1,17 @@
+The hardware consists of a linux machine connected with a wireless interface with monitor mode capabilities.
+
+You the program do following functions:
+- enable/disable monitor mode for the wireless interface
+- turn on/off the wireless interface - while
+
+in monitor mode and on:
+
+a. list all the wifi clients that are currently in range of the wireless interface
+(this list refresh automatically and clients which dropped out of range removed from the list).
+Also give details related with signal strength and time spent in range
+
+b. log of all the wifi clients (those currently in range as well as all historical)
+together with time spent in range and number of times client came in range.
+
+c. Selecting any wifi client bring up a histogram of signal strength recorded, details of times spent in range.
+
