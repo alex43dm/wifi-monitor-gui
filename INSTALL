@@ -1,0 +1,16 @@
+For docker:
+docker pull kalilinux/kali-rolling
+docker run -t -i kalilinux/kali-rolling /bin/bash
+apt-get update && apt-get install metasploit-framework
+
+Common install on Kali:
+apt-get install qt5-qmake
+apt-get install qt5-default
+apt-get install qml-module-qtcharts
+apt-get install libqt5charts5-dev
+
+git clone https://github.com/alex43dm/wifi-monitor-gui.git
+cd wifi-monitor-gui
+qmake
+make
+
