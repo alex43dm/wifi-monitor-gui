@@ -8,6 +8,7 @@
 #include <QBarSeries>
 #include <QValueAxis>
 #include <QBarCategoryAxis>
+#include <QSettings>
 
 #include "unixclient.h"
 
@@ -19,12 +20,14 @@ class MainWindow : public QMainWindow
 {
         Q_OBJECT
         QString path;
+        int timeOut;
         int row;
         QString mac;
         QtCharts::QBarSeries *series;
         QtCharts::QValueAxis *axisY;
         QtCharts::QBarCategoryAxis *axisX;
         QTimer *timer;
+        QSettings *settings;
 
     public:
         MainWindow(QWidget *parent = nullptr);

@@ -22,7 +22,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    path = "/var/lib/wifi-monitor";
+    settings = new QSettings("wifi-monitor-gui");
+    path = settings->value("main/Path").toString();
+    timeOut = settings->value("main/RefreshTimeout").toInt();
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     model = new QStandardItemModel();
@@ -68,7 +70,7 @@ MainWindow::MainWindow(QWidget *parent)
     VisibleScanMenu(false);
 
     timer = new QTimer;
-    timer->setInterval(1000);
+    timer->setInterval(timeOut);
     connect(timer, &QTimer::timeout, this, &MainWindow::refreshTable);
 
     series = new QtCharts::QBarSeries();
@@ -97,6 +99,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    delete settings;
     delete timer;
 
     delete axisY;
