@@ -13,6 +13,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#define MAX_ROW_COUNT_TW1 7
+#define MAX_ROW_COUNT_TW2 10
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -238,20 +241,17 @@ void MainWindow::handleResults(const QString &s)
         QStringList list = lines[i].split(QLatin1Char(','));
         if (list.size() == 1)
             continue;
-        for (int j = 0; j < 7; ++j)
+        for (int j = 0; j < MAX_ROW_COUNT_TW1; ++j)
         {
-            if (j == 6)
+            if (j == MAX_ROW_COUNT_TW1 - 1 && list.size() > MAX_ROW_COUNT_TW1)
             {
-                if (list.size() > 7)
+                QString str = list.at(j);
+                for (int l = j + 1; l < list.size(); ++l)
                 {
-                    QString str = list.at(j);
-                    for (int l = 7; l < list.size(); ++l)
-                    {
-                        str += "," + list.at(l);
-                    }
-                    rowData << new QStandardItem(str);
-                    continue;
+                    str += "," + list.at(l);
                 }
+                rowData << new QStandardItem(str);
+                continue;
             }
             rowData << new QStandardItem(list.at(j));
         }
@@ -362,7 +362,7 @@ void MainWindow::currentTabChanged(int tab)
             QStringList list = line.split(QLatin1Char(','));
             if (list.size() == 1)
                 continue;
-            for (int j = 0; j < 10; ++j)
+            for (int j = 0; j < MAX_ROW_COUNT_TW2; ++j)
             {
                 rowData << new QStandardItem(list.at(j));
             }
