@@ -18,7 +18,7 @@
     <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -74,7 +74,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionStop">
    <property name="text">
-    <string>Stop</string>
+    <string>Start monitor mode</string>
    </property>
    <property name="toolTip">
     <string>Wifi Stop</string>
@@ -85,7 +85,7 @@
   </action>
   <action name="actionStart">
    <property name="text">
-    <string>Start</string>
+    <string>Stop monitor mode</string>
    </property>
    <property name="toolTip">
     <string>Wifi Start</string>
@@ -96,7 +96,7 @@
   </action>
   <action name="actionStart_2">
    <property name="text">
-    <string>Start</string>
+    <string>Start wifi scan</string>
    </property>
    <property name="toolTip">
     <string>Scan Start</string>
@@ -107,7 +107,7 @@
   </action>
   <action name="actionStop_2">
    <property name="text">
-    <string>Stop</string>
+    <string>Stop wifi scan</string>
    </property>
    <property name="toolTip">
     <string>Scan Stop</string>

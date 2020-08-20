@@ -1,5 +1,8 @@
+#ifdef DEBUG
 #include <QDebug>
+#endif
 #include <QDir>
+#include <QTextStream>
 #include <QBarSet>
 #include <QBarSeries>
 #include <QChart>
@@ -21,9 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableView->setModel(model);
     model->sort(0, Qt::AscendingOrder);
 
-    connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection &,
-            const QItemSelection &)), this, SLOT(slotTableViewSelected(const QItemSelection &,
-                    const QItemSelection &)));
+    connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MainWindow::slotTableViewSelected);
     row = -1;
 
     model->setHorizontalHeaderItem(0, new QStandardItem("Station MAC"));
@@ -49,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     modelLog->setHorizontalHeaderItem(8, new QStandardItem("Latitude Error"));
     modelLog->setHorizontalHeaderItem(9, new QStandardItem("Longitude Error"));
 
-    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(currentTabChanged(int)));
+    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::currentTabChanged);
 
     uc = new UnixClient();
 
@@ -177,14 +178,16 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
         }
 
         series->clear();
-
+#ifdef DEBUG
         qDebug() << "mac : " << mac << Qt::endl;
-
+#endif
         int max = -1;
         QHash<QString, int>::const_iterator i = countHash.constBegin();
         while (i != countHash.constEnd())
         {
+#ifdef DEBUG
             qDebug() << i.key() << " : " << i.value() << Qt::endl;
+#endif
             QtCharts::QBarSet *set = new QtCharts::QBarSet(i.key());
             *set << i.value();
             series->append(set);
