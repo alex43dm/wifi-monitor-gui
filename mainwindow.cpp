@@ -76,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     QtCharts::QChart *chart = new QtCharts::QChart();
     chart->addSeries(series);
     chart->setTitle("Signal");
-    //chart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+    chart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
 
     axisX = new QtCharts::QBarCategoryAxis();
     chart->addAxis(axisX, Qt::AlignBottom);
@@ -101,6 +101,10 @@ MainWindow::~MainWindow()
 
     thr->quit();
     thr->wait();
+
+    delete axisY;
+    delete axisX;
+    delete series;
 
     delete  worker;
     delete thr;
