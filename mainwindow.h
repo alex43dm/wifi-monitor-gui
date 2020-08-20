@@ -6,6 +6,8 @@
 #include <QItemSelection>
 #include <QThread>
 #include <QBarSeries>
+#include <QValueAxis>
+#include <QBarCategoryAxis>
 
 #include "filetail.h"
 #include "unixclient.h"
@@ -20,6 +22,8 @@ class MainWindow : public QMainWindow
         int row;
         QString mac;
         QtCharts::QBarSeries *series;
+        QtCharts::QValueAxis *axisY;
+        QtCharts::QBarCategoryAxis *axisX;
 
     public:
         MainWindow(QWidget *parent = nullptr);

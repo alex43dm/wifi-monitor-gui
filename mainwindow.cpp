@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::ScanStart);
     connect(ui->actionStop_2, &QAction::triggered, this, &MainWindow::ScanStop);
 
-    //VisibleScanMenu(false);
+    VisibleScanMenu(false);
 
     worker = new FileTail;
     worker->path = "/var/lib/wifi-monitor";
@@ -78,16 +78,11 @@ MainWindow::MainWindow(QWidget *parent)
     chart->setTitle("Signal");
     //chart->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
 
-    QStringList categories;
-    categories << "MAC";
-
-    QtCharts::QBarCategoryAxis *axisX = new QtCharts::QBarCategoryAxis();
-    axisX->append(categories);
+    axisX = new QtCharts::QBarCategoryAxis();
     chart->addAxis(axisX, Qt::AlignBottom);
     series->attachAxis(axisX);
 
-    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
-    axisY->setRange(0, 100);
+    axisY = new QtCharts::QValueAxis();
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
 
@@ -155,7 +150,7 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
             return;
         }
 
-        QHash<float, int> countHash;
+        QHash<QString, int> countHash;
         QStringList lines = s.split('\n');
         for (int i = 0; i < lines.size(); ++i)
         {
@@ -164,7 +159,7 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
                 QStringList list = lines[i].split(QLatin1Char(','));
                 if (list.size() < 5)
                     continue;
-                float a = abs(list.at(4).toFloat());
+                QString a = QString::number(list.at(4).toFloat());
                 if (countHash.contains(a))
                 {
                     int val = countHash[a] + 1;
@@ -181,17 +176,24 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
 
         qDebug() << "mac : " << mac << Qt::endl;
 
-        QHash<float, int>::const_iterator i = countHash.constBegin();
+        int max = -1;
+        QHash<QString, int>::const_iterator i = countHash.constBegin();
         while (i != countHash.constEnd())
         {
             qDebug() << i.key() << " : " << i.value() << Qt::endl;
-            QString str = QString::number(i.value());
-            QtCharts::QBarSet *set = new QtCharts::QBarSet(str);
-            *set << i.key();
+            QtCharts::QBarSet *set = new QtCharts::QBarSet(i.key());
+            *set << i.value();
             series->append(set);
-
+            if(i.value() > max) max = i.value();
             ++i;
         }
+
+        axisX->clear();
+        QStringList categories;
+        categories << mac;
+        axisX->append(categories);
+
+        axisY->setRange(0, max + max/4);
     }
     /*
     else if(deselected.indexes().size() > 0)
