@@ -22,6 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    path = "/var/lib/wifi-monitor";
+
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     model = new QStandardItemModel();
     ui->tableView->setModel(model);
@@ -65,16 +67,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     VisibleScanMenu(false);
 
-    worker = new FileTail;
-    worker->path = "/var/lib/wifi-monitor";
-    thr = new QThread;
-    worker->moveToThread(thr);
-
-    connect(thr, &QThread::started, worker, &FileTail::process);
-    connect(worker, &FileTail::finished, thr, &QThread::quit);
-    connect(worker, &FileTail::finished, worker, &FileTail::deleteLater);
-    connect(thr, &QThread::finished, thr, &QThread::deleteLater);
-    connect(worker, &FileTail::resultReady, this, &MainWindow::handleResults);
+    timer = new QTimer;
+    timer->setInterval(1000);
+    connect(timer, &QTimer::timeout, this, &MainWindow::refreshTable);
 
     series = new QtCharts::QBarSeries();
 
@@ -102,17 +97,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    worker->quit = true;
-
-    thr->quit();
-    thr->wait();
+    delete timer;
 
     delete axisY;
     delete axisX;
     delete series;
-
-    delete  worker;
-    delete thr;
 
     delete uc;
     delete modelLog;
@@ -296,8 +285,7 @@ void MainWindow::ScanStart()
     }
     else
     {
-        worker->quit = false;
-        thr->start();
+        timer->start();
     }
 }
 
@@ -309,14 +297,13 @@ void MainWindow::ScanStop()
     }
     else
     {
-        worker->quit = true;
-        thr->quit();
+        timer->stop();
     }
 }
 
 const QString MainWindow::getLogFile()
 {
-    QDir dir(worker->path, "dump-*.csv");
+    QDir dir(path, "dump-*.csv");
     dir.setFilter(QDir::Files);
     dir.setSorting(QDir::Time);
 
@@ -369,5 +356,42 @@ void MainWindow::currentTabChanged(int tab)
             modelLog->appendRow(rowData);
             rowData.clear();
         }
+    }
+}
+
+void MainWindow::refreshTable()
+{
+    QDir dir(path, "dump-*.csv");
+    dir.setFilter(QDir::Files);
+    dir.setSorting(QDir::Time);
+    QString fpath;
+    for (const QFileInfo &file : dir.entryInfoList())
+    {
+        if (file.fileName().contains("kismet", Qt::CaseInsensitive))
+            continue;
+        if (file.fileName().contains("log", Qt::CaseInsensitive))
+            continue;
+        fpath = file.filePath();
+        break;
+    }
+
+    try
+    {
+        FILE *fp = fopen(fpath.toStdString().c_str(), "r");
+        if (fp)
+        {
+            QTextStream s1(fp, QIODevice::ReadOnly);
+            QString s = s1.readAll();
+            fclose(fp);
+            handleResults(s);
+        }
+        else
+        {
+            ui->statusbar->showMessage("Cann't open file: " + fpath);
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        ui->statusbar->showMessage("Error: " + QString(ex.what()));
     }
 }

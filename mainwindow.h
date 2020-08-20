@@ -4,12 +4,11 @@
 #include <QMainWindow>
 #include <QStandardItemModel>
 #include <QItemSelection>
-#include <QThread>
+#include <QTimer>
 #include <QBarSeries>
 #include <QValueAxis>
 #include <QBarCategoryAxis>
 
-#include "filetail.h"
 #include "unixclient.h"
 
 QT_BEGIN_NAMESPACE
@@ -19,11 +18,13 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
         Q_OBJECT
+        QString path;
         int row;
         QString mac;
         QtCharts::QBarSeries *series;
         QtCharts::QValueAxis *axisY;
         QtCharts::QBarCategoryAxis *axisX;
+        QTimer *timer;
 
     public:
         MainWindow(QWidget *parent = nullptr);
@@ -34,7 +35,6 @@ class MainWindow : public QMainWindow
         QStandardItemModel *model, *modelLog;
         UnixClient *uc;
         QThread *thr;
-        FileTail *worker;
 
         void VisibleScanMenu(bool);
         const QString getLogFile();
@@ -46,6 +46,7 @@ class MainWindow : public QMainWindow
         void ScanStop();
         void slotTableViewSelected(const QItemSelection &selected, const QItemSelection &deselected);
         void currentTabChanged(int);
+        void refreshTable();
 
 
     public slots:
