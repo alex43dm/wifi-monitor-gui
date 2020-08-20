@@ -238,8 +238,21 @@ void MainWindow::handleResults(const QString &s)
         QStringList list = lines[i].split(QLatin1Char(','));
         if (list.size() == 1)
             continue;
-        for (int j = 0; j < list.size(); ++j)
+        for (int j = 0; j < 7; ++j)
         {
+            if (j == 6)
+            {
+                if (list.size() > 7)
+                {
+                    QString str = list.at(j);
+                    for (int l = 7; l < list.size(); ++l)
+                    {
+                        str += "," + list.at(l);
+                    }
+                    rowData << new QStandardItem(str);
+                    continue;
+                }
+            }
             rowData << new QStandardItem(list.at(j));
         }
         model->appendRow(rowData);
@@ -306,11 +319,9 @@ const QString MainWindow::getLogFile()
     QDir dir(worker->path, "dump-*.csv");
     dir.setFilter(QDir::Files);
     dir.setSorting(QDir::Time);
-    QFileInfoList list = dir.entryInfoList();
-    QString fpath;
-    for (int i = 0; i < list.size(); ++i)
+
+    for (const QFileInfo &fileInfo : dir.entryInfoList())
     {
-        QFileInfo fileInfo = list.at(i);
         if (fileInfo.fileName().contains("kismet", Qt::CaseInsensitive))
             continue;
         if (fileInfo.fileName().contains("log", Qt::CaseInsensitive))
@@ -342,22 +353,21 @@ void MainWindow::currentTabChanged(int tab)
 
         modelLog->removeRows(0, modelLog->rowCount());
 
-        QStringList lines = s.split('\n');
-        for (int i = 0; i < lines.size(); ++i)
+        for (const QString &line : s.split('\n'))
         {
-            if (lines.at(i).contains("Client"))
+            if (!line.contains("Client"))
+                continue;
+
+            QList<QStandardItem *> rowData;
+            QStringList list = line.split(QLatin1Char(','));
+            if (list.size() == 1)
+                continue;
+            for (int j = 0; j < 10; ++j)
             {
-                QList<QStandardItem *> rowData;
-                QStringList list = lines[i].split(QLatin1Char(','));
-                if (list.size() == 1)
-                    continue;
-                for (int j = 0; j < list.size() - 1; ++j)
-                {
-                    rowData << new QStandardItem(list.at(j));
-                }
-                modelLog->appendRow(rowData);
-                rowData.clear();
+                rowData << new QStandardItem(list.at(j));
             }
+            modelLog->appendRow(rowData);
+            rowData.clear();
         }
     }
 }
