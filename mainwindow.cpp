@@ -24,7 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableView->setModel(model);
     model->sort(0, Qt::AscendingOrder);
 
-    connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MainWindow::slotTableViewSelected);
+    connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+            &MainWindow::slotTableViewSelected);
     row = -1;
 
     model->setHorizontalHeaderItem(0, new QStandardItem("Station MAC"));
@@ -157,22 +158,25 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
 
         QHash<QString, int> countHash;
         QStringList lines = s.split('\n');
-        for (int i = 0; i < lines.size(); ++i)
+        for (const QString &line : lines)
         {
-            if (lines.at(i).contains("Client") && lines.at(i).contains(mac))
+            if (line.contains("Client") && line.contains(mac))
             {
-                QStringList list = lines[i].split(QLatin1Char(','));
-                if (list.size() < 5)
-                    continue;
-                QString a = QString::number(list.at(4).toFloat());
-                if (countHash.contains(a))
+                QStringList cell = line.split(QLatin1Char(','));
+                if (cell.size() < 5)
                 {
-                    int val = countHash[a] + 1;
-                    countHash[a] = val;
+#ifdef DEBUG
+                    qDebug() << "Error parsing: " << list << Qt::endl;
+#endif
+                    continue;
+                }
+                if (countHash.contains(cell.at(4)))
+                {
+                    countHash[cell.at(4)] = countHash[cell.at(4)] + 1;
                 }
                 else
                 {
-                    countHash.insert(a, 1);
+                    countHash.insert(cell.at(4), 1);
                 }
             }
         }
@@ -191,7 +195,7 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
             QtCharts::QBarSet *set = new QtCharts::QBarSet(i.key());
             *set << i.value();
             series->append(set);
-            if(i.value() > max) max = i.value();
+            if (i.value() > max) max = i.value();
             ++i;
         }
 
@@ -200,7 +204,7 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
         categories << mac;
         axisX->append(categories);
 
-        axisY->setRange(0, max + max/4);
+        axisY->setRange(0, max + max / 4);
     }
     /*
     else if(deselected.indexes().size() > 0)
