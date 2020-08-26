@@ -45,6 +45,7 @@ class MainWindow : public QMainWindow
     private slots:
         void WifiStart();
         void WifiStop();
+        void WifiState();
         void ScanStart();
         void ScanStop();
         void slotTableViewSelected(const QItemSelection &selected, const QItemSelection &deselected);

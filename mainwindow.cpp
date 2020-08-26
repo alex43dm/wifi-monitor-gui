@@ -277,7 +277,18 @@ void MainWindow::WifiStop()
     {
         ui->statusbar->showMessage(uc->err);
     }
-    VisibleScanMenu(true);
+    else
+    {
+        QStringList l = uc->StatustWIFI().split(' ');
+        if (l.size() == 2)
+        {
+            if (l[1] == "0")
+            {
+                VisibleScanMenu(true);
+            }
+            ui->statusbar->showMessage("wifi interface: " + l[0]);
+        }
+    }
 }
 
 void MainWindow::ScanStart()
@@ -302,6 +313,11 @@ void MainWindow::ScanStop()
     {
         timer->stop();
     }
+}
+
+void MainWindow::WifiState()
+{
+
 }
 
 const QString MainWindow::getLogFile()
