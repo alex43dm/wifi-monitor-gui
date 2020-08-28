@@ -272,7 +272,7 @@ void MainWindow::handleResults(const QString &s)
 void MainWindow::WifiGetStatus()
 {
     QStringList l = uc->StatustWIFI().split(' ');
-    if (l.size() == 2)
+    if (l.size() > 1)
     {
         if (l[1] == "0")
         {
