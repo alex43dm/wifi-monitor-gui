@@ -14,3 +14,5 @@ cd wifi-monitor-gui
 qmake
 make
 
+cp wifi-monitor-gui /usr/bin
+cp wifi-monitor-gui.conf ~/.config/wifi-monitor-gui.conf
