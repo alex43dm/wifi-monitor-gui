@@ -283,6 +283,10 @@ void MainWindow::WifiGetStatus()
             VisibleScanMenu(false);
         }
         ui->statusbar->showMessage("wifi interface: " + l[0]);
+        if(l.size() == 3 && l[2] == "1")
+        {
+            timer->start();
+        }
     }
     else
     {
