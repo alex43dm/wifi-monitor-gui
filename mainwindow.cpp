@@ -24,7 +24,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     settings = new QSettings("wifi-monitor-gui");
     path = settings->value("main/Path").toString();
+    if(path.size() == 0)
+    {
+        path = "/var/lib/wifi-monitor";
+    }
+
     timeOut = settings->value("main/RefreshTimeout").toInt();
+    if(timeOut == 0)
+    {
+        timeOut = 1000;
+    }
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     model = new QStandardItemModel();
