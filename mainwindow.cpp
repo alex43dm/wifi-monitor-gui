@@ -9,12 +9,14 @@
 #include <QBarCategoryAxis>
 #include <QValueAxis>
 #include <QChartView>
+#include <QDateTime>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 #define MAX_ROW_COUNT_TW1 7
 #define MAX_ROW_COUNT_TW2 10
+#define DATE_FORMAT "yyyy-MM-dd HH:mm:ss"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,16 +26,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     settings = new QSettings("wifi-monitor-gui");
     path = settings->value("main/Path").toString();
-    if(path.size() == 0)
+    if (path.size() == 0)
     {
         path = "/var/lib/wifi-monitor";
     }
 
     timeOut = settings->value("main/RefreshTimeout").toInt();
-    if(timeOut == 0)
+    if (timeOut == 0)
     {
         timeOut = 1000;
     }
+
+    kickTimeout = 120;
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     model = new QStandardItemModel();
@@ -46,26 +50,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     model->setHorizontalHeaderItem(0, new QStandardItem("Station MAC"));
     model->setHorizontalHeaderItem(1, new QStandardItem("First time seen"));
-    model->setHorizontalHeaderItem(2, new QStandardItem("Last time seen"));
+    model->setHorizontalHeaderItem(2, new QStandardItem("Time in range"));
     model->setHorizontalHeaderItem(3, new QStandardItem("Power"));
-    model->setHorizontalHeaderItem(4, new QStandardItem("# packets"));
-    model->setHorizontalHeaderItem(5, new QStandardItem("BSSID"));
-    model->setHorizontalHeaderItem(6, new QStandardItem("Probed ESSIDs"));
+    model->setHorizontalHeaderItem(4, new QStandardItem("Associated"));
 
     ui->tableViewLog->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     modelLog = new QStandardItemModel();
     ui->tableViewLog->setModel(modelLog);
+    modelLog->sort(0, Qt::AscendingOrder);
 
-    modelLog->setHorizontalHeaderItem(0, new QStandardItem("LocalTime"));
-    modelLog->setHorizontalHeaderItem(1, new QStandardItem("GPSTime"));
-    modelLog->setHorizontalHeaderItem(2, new QStandardItem("ESSID"));
-    modelLog->setHorizontalHeaderItem(3, new QStandardItem("BSSID"));
-    modelLog->setHorizontalHeaderItem(4, new QStandardItem("Power"));
-    modelLog->setHorizontalHeaderItem(5, new QStandardItem("Security"));
-    modelLog->setHorizontalHeaderItem(6, new QStandardItem("Latitude"));
-    modelLog->setHorizontalHeaderItem(7, new QStandardItem("Longitude"));
-    modelLog->setHorizontalHeaderItem(8, new QStandardItem("Latitude Error"));
-    modelLog->setHorizontalHeaderItem(9, new QStandardItem("Longitude Error"));
+    modelLog->setHorizontalHeaderItem(0, new QStandardItem("Station MAC"));
+    modelLog->setHorizontalHeaderItem(1, new QStandardItem("First time seen"));
+    modelLog->setHorizontalHeaderItem(2, new QStandardItem("Last time seen"));
+    modelLog->setHorizontalHeaderItem(3, new QStandardItem("Average Power"));
+    modelLog->setHorizontalHeaderItem(4, new QStandardItem("Number of times in range"));
 
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::currentTabChanged);
 
@@ -225,6 +223,19 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
         }*/
 }
 
+static int64_t dateTimeDiff(const QString &firstStr, const QString &lastStr)
+{
+    return QDateTime().fromString(firstStr.trimmed(),
+                                  DATE_FORMAT).secsTo(QDateTime().fromString(lastStr.trimmed(), DATE_FORMAT));
+}
+
+static QStandardItem *getStandartItem(const QString &str)
+{
+    QStandardItem *sit = new QStandardItem(str);
+    sit->setTextAlignment(Qt::AlignCenter);
+    return sit;
+}
+
 void MainWindow::handleResults(const QString &s)
 {
     model->removeRows(0, model->rowCount());
@@ -249,19 +260,21 @@ void MainWindow::handleResults(const QString &s)
         QStringList list = lines[i].split(QLatin1Char(','));
         if (list.size() == 1)
             continue;
+
         for (int j = 0; j < MAX_ROW_COUNT_TW1; ++j)
         {
-            if (j == MAX_ROW_COUNT_TW1 - 1 && list.size() > MAX_ROW_COUNT_TW1)
-            {
-                QString str = list.at(j);
-                for (int l = j + 1; l < list.size(); ++l)
-                {
-                    str += "," + list.at(l);
-                }
-                rowData << new QStandardItem(str);
+            if (j == 4 || j == 6)
                 continue;
+
+            if (j == 2)
+            {
+                QTime a(0, 0, 0);
+                rowData << getStandartItem(a.addSecs(dateTimeDiff(list.at(j - 1), list.at(j))).toString());
             }
-            rowData << new QStandardItem(list.at(j));
+            else
+            {
+                rowData << getStandartItem(list.at(j));
+            }
         }
         model->appendRow(rowData);
         rowData.clear();
@@ -292,7 +305,7 @@ void MainWindow::WifiGetStatus()
             VisibleScanMenu(false);
         }
         ui->statusbar->showMessage("wifi interface: " + l[0]);
-        if(l.size() == 3 && l[2] == "1")
+        if (l.size() == 3 && l[2] == "1")
         {
             timer->start();
         }
@@ -380,21 +393,58 @@ void MainWindow::currentTabChanged(int tab)
             return;
         }
 
-        modelLog->removeRows(0, modelLog->rowCount());
-
+        QSet<QString> MACs;
         for (const QString &line : s.split('\n'))
         {
             if (!line.contains("Client"))
                 continue;
 
-            QList<QStandardItem *> rowData;
             QStringList list = line.split(QLatin1Char(','));
-            if (list.size() == 1)
+            if (list.size() < MAX_ROW_COUNT_TW2 || MACs.contains(list.at(3)))
                 continue;
-            for (int j = 0; j < MAX_ROW_COUNT_TW2; ++j)
+
+            MACs.insert(list.at(3));
+        }
+
+        modelLog->removeRows(0, modelLog->rowCount());
+        foreach (const QString &mac, MACs)
+        {
+            QString FirstTimeSeen;
+            QString LastTimeSeen;
+            size_t cnt = 0;
+            int64_t powerSum = 0;
+            size_t numberInRange = 0;
+            for (const QString &line : s.split('\n'))
             {
-                rowData << new QStandardItem(list.at(j));
+                if (!line.contains("Client") || !line.contains(mac))
+                    continue;
+
+                QStringList list = line.split(QLatin1Char(','));
+                if (list.size() < MAX_ROW_COUNT_TW2)
+                    continue;
+
+                cnt++;
+                powerSum += list.at(4).toInt();
+
+                if (FirstTimeSeen.size() == 0)
+                {
+                    FirstTimeSeen = list.at(0);
+                }
+
+                if (dateTimeDiff(LastTimeSeen, list.at(0)) > kickTimeout)
+                {
+                    numberInRange++;
+                }
+
+                LastTimeSeen = list.at(0);
             }
+
+            QList<QStandardItem *> rowData;
+            rowData << getStandartItem(mac);
+            rowData << getStandartItem(FirstTimeSeen);
+            rowData << getStandartItem(LastTimeSeen);
+            rowData << getStandartItem("-" + QString::number(abs(powerSum) / cnt, 'g', 3));
+            rowData << getStandartItem(QString::number(numberInRange));
             modelLog->appendRow(rowData);
             rowData.clear();
         }

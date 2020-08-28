@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow
         QString path;
         int timeOut;
         int row;
+        int kickTimeout;
         QString mac;
         QtCharts::QBarSeries *series;
         QtCharts::QValueAxis *axisY;
