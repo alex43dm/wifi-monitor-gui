@@ -67,7 +67,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::ScanStart);
     connect(ui->actionStop_2, &QAction::triggered, this, &MainWindow::ScanStop);
 
-    VisibleScanMenu(false);
 
     timer = new QTimer;
     timer->setInterval(timeOut);
@@ -95,11 +94,19 @@ MainWindow::MainWindow(QWidget *parent)
     chartView->setRenderHint(QPainter::Antialiasing);
 
     ui->tabWidget->addTab(chartView, "Histogram");
+
+    WifiGetStatus();
+
+    stateTimer = new QTimer;
+    stateTimer->setInterval(3000);
+    connect(stateTimer, &QTimer::timeout, this, &MainWindow::WifiGetStatus);
+    stateTimer->start();
 }
 
 MainWindow::~MainWindow()
 {
     delete settings;
+    delete stateTimer;
     delete timer;
 
     delete axisY;
@@ -262,13 +269,33 @@ void MainWindow::handleResults(const QString &s)
     }
 }
 
+void MainWindow::WifiGetStatus()
+{
+    QStringList l = uc->StatustWIFI().split(' ');
+    if (l.size() == 2)
+    {
+        if (l[1] == "0")
+        {
+            VisibleScanMenu(true);
+        }
+        else
+        {
+            VisibleScanMenu(false);
+        }
+        ui->statusbar->showMessage("wifi interface: " + l[0]);
+    }
+    else
+    {
+        VisibleScanMenu(false);
+    }
+}
+
 void MainWindow::WifiStart()
 {
     if (uc->StartWIFI())
     {
         ui->statusbar->showMessage(uc->err);
     }
-    VisibleScanMenu(false);
 }
 
 void MainWindow::WifiStop()
@@ -276,18 +303,6 @@ void MainWindow::WifiStop()
     if (uc->StoptWIFI())
     {
         ui->statusbar->showMessage(uc->err);
-    }
-    else
-    {
-        QStringList l = uc->StatustWIFI().split(' ');
-        if (l.size() == 2)
-        {
-            if (l[1] == "0")
-            {
-                VisibleScanMenu(true);
-            }
-            ui->statusbar->showMessage("wifi interface: " + l[0]);
-        }
     }
 }
 
@@ -313,11 +328,6 @@ void MainWindow::ScanStop()
     {
         timer->stop();
     }
-}
-
-void MainWindow::WifiState()
-{
-
 }
 
 const QString MainWindow::getLogFile()

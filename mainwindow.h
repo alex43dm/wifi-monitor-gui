@@ -26,7 +26,7 @@ class MainWindow : public QMainWindow
         QtCharts::QBarSeries *series;
         QtCharts::QValueAxis *axisY;
         QtCharts::QBarCategoryAxis *axisX;
-        QTimer *timer;
+        QTimer *timer, *stateTimer;
         QSettings *settings;
 
     public:
@@ -45,7 +45,7 @@ class MainWindow : public QMainWindow
     private slots:
         void WifiStart();
         void WifiStop();
-        void WifiState();
+        void WifiGetStatus();
         void ScanStart();
         void ScanStop();
         void slotTableViewSelected(const QItemSelection &selected, const QItemSelection &deselected);
