@@ -15,4 +15,13 @@ qmake
 make
 
 cp wifi-monitor-gui /usr/bin
+
+The config has:
+1) The path to daemon files:
+Path="/var/lib/wifi-monitor"
+2) Refresh timeout main tab in msec, well value > 1000, becose daemon update data not faster 1s
+RefreshTimeout=1000;
+3) The timeout when the program deside that client was out of range
+KickTimeout = 120;
+
 cp wifi-monitor-gui.conf ~/.config/wifi-monitor-gui.conf

@@ -37,7 +37,12 @@ MainWindow::MainWindow(QWidget *parent)
         timeOut = 1000;
     }
 
-    kickTimeout = 120;
+    kickTimeout = settings->value("main/KickTimeout").toInt();
+    if (kickTimeout == 0)
+    {
+        kickTimeout = 120;
+    }
+
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     model = new QStandardItemModel();
