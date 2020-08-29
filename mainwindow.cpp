@@ -10,13 +10,12 @@
 #include <QValueAxis>
 #include <QChartView>
 #include <QDateTime>
+#include <QThread>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 #define MAX_ROW_COUNT_TW1 7
-#define MAX_ROW_COUNT_TW2 10
-#define DATE_FORMAT "yyyy-MM-dd HH:mm:ss"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -228,12 +227,6 @@ void MainWindow::slotTableViewSelected(const QItemSelection &selected,
         }*/
 }
 
-static int64_t dateTimeDiff(const QString &firstStr, const QString &lastStr)
-{
-    return QDateTime().fromString(firstStr.trimmed(),
-                                  DATE_FORMAT).secsTo(QDateTime().fromString(lastStr.trimmed(), DATE_FORMAT));
-}
-
 static QStandardItem *getStandartItem(const QString &str)
 {
     QStandardItem *sit = new QStandardItem(str);
@@ -379,6 +372,51 @@ const QString MainWindow::getLogFile()
     return QString();
 }
 
+void MainWindow::fillLogTable(MACresult *res)
+{
+    QList<QStandardItem *> rowData;
+    rowData << getStandartItem(res->mac);
+    rowData << getStandartItem(res->FirstTimeSeen);
+    rowData << getStandartItem(res->LastTimeSeen);
+    rowData << getStandartItem("-" + QString::number(res->powerSum, 'g', 3));
+    rowData << getStandartItem(QString::number(res->numberInRange));
+    modelLog->appendRow(rowData);
+
+    delete  res;
+}
+
+void MainWindow::runThread(std::shared_ptr<QString> s, const QString &mac)
+{
+    MACStat * worker = new MACStat(s, mac, kickTimeout);
+    QThread* thread = new QThread;
+    worker->moveToThread(thread);
+    connect(thread, &QThread::started, worker, &MACStat::process);
+    connect(worker, &MACStat::sendResult, this, &MainWindow::fillLogTable);
+    thread->start();
+}
+
+QSet<QString> *getMACSet(QString *s)
+{
+        QSet<QString> *MACs = new QSet<QString>();
+        QStringList l = s->split('\n');
+        for (int i = 0; i < l.size(); ++i)
+        {
+            if (!l.at(i).contains("Client"))
+            {
+                l.removeAt(i);
+                continue;
+            }
+
+            QStringList list = l.at(i).split(QLatin1Char(','));
+            if (list.size() < MAX_ROW_COUNT_TW2 || MACs->contains(list.at(3)))
+                continue;
+
+            MACs->insert(list.at(3));
+        }
+        *s = l.join('\n');
+        return MACs;
+}
+
 void MainWindow::currentTabChanged(int tab)
 {
     if (tab == 1)
@@ -398,60 +436,15 @@ void MainWindow::currentTabChanged(int tab)
             return;
         }
 
-        QSet<QString> MACs;
-        for (const QString &line : s.split('\n'))
-        {
-            if (!line.contains("Client"))
-                continue;
+        QSet<QString> *MACs = getMACSet(&s);
 
-            QStringList list = line.split(QLatin1Char(','));
-            if (list.size() < MAX_ROW_COUNT_TW2 || MACs.contains(list.at(3)))
-                continue;
-
-            MACs.insert(list.at(3));
-        }
+        std::shared_ptr<QString> ptr = std::make_shared<QString>(s);
 
         modelLog->removeRows(0, modelLog->rowCount());
-        foreach (const QString &mac, MACs)
+
+        foreach (const QString &mac, *MACs)
         {
-            QString FirstTimeSeen;
-            QString LastTimeSeen;
-            size_t cnt = 0;
-            int64_t powerSum = 0;
-            size_t numberInRange = 0;
-            for (const QString &line : s.split('\n'))
-            {
-                if (!line.contains("Client") || !line.contains(mac))
-                    continue;
-
-                QStringList list = line.split(QLatin1Char(','));
-                if (list.size() < MAX_ROW_COUNT_TW2)
-                    continue;
-
-                cnt++;
-                powerSum += list.at(4).toInt();
-
-                if (FirstTimeSeen.size() == 0)
-                {
-                    FirstTimeSeen = list.at(0);
-                }
-
-                if (dateTimeDiff(LastTimeSeen, list.at(0)) > kickTimeout)
-                {
-                    numberInRange++;
-                }
-
-                LastTimeSeen = list.at(0);
-            }
-
-            QList<QStandardItem *> rowData;
-            rowData << getStandartItem(mac);
-            rowData << getStandartItem(FirstTimeSeen);
-            rowData << getStandartItem(LastTimeSeen);
-            rowData << getStandartItem("-" + QString::number(abs(powerSum) / cnt, 'g', 3));
-            rowData << getStandartItem(QString::number(numberInRange));
-            modelLog->appendRow(rowData);
-            rowData.clear();
+            runThread(ptr, mac);
         }
     }
 }

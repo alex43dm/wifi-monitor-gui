@@ -11,6 +11,7 @@
 #include <QSettings>
 
 #include "unixclient.h"
+#include "macstat.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -42,6 +43,7 @@ class MainWindow : public QMainWindow
 
         void VisibleScanMenu(bool);
         const QString getLogFile();
+        void runThread(std::shared_ptr<QString>, const QString &);
 
     private slots:
         void WifiStart();
@@ -52,6 +54,7 @@ class MainWindow : public QMainWindow
         void slotTableViewSelected(const QItemSelection &selected, const QItemSelection &deselected);
         void currentTabChanged(int);
         void refreshTable();
+        void fillLogTable(MACresult *);
 
 
     public slots:
