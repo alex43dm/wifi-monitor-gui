@@ -20,11 +20,11 @@ struct MACresult
 class MACStat : public QObject
 {
     Q_OBJECT
-   std::shared_ptr<QString> buf;
+   std::shared_ptr<QStringList> buf;
    MACresult *res;
    int kickTimeout;
 public:
-    MACStat(std::shared_ptr<QString>, const QString &, int);
+    MACStat(std::shared_ptr<QStringList>, const QString &, int);
 public slots:
     void process();
  signals:

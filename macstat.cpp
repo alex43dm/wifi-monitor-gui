@@ -8,7 +8,7 @@ int64_t dateTimeDiff(const QString &firstStr, const QString &lastStr)
                                   DATE_FORMAT).secsTo(QDateTime().fromString(lastStr.trimmed(), DATE_FORMAT));
 }
 
-MACStat::MACStat(std::shared_ptr<QString> s, const QString &m, int kt)
+MACStat::MACStat(std::shared_ptr<QStringList> s, const QString &m, int kt)
 {
     buf = s;
     res = new MACresult();
@@ -20,9 +20,7 @@ void MACStat::process()
 {
     int cnt = 0;
     int powerSum = 0;
-    if(!buf)
-        return;
-    for (const QString &line : buf->split('\n'))
+    for (const QString &line : *buf)
     {
         if (!line.contains(res->mac))
             continue;

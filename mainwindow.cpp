@@ -385,7 +385,7 @@ void MainWindow::fillLogTable(MACresult *res)
     delete  res;
 }
 
-void MainWindow::runThread(std::shared_ptr<QString> s, const QString &mac)
+void MainWindow::runThread(std::shared_ptr<QStringList> s, const QString &mac)
 {
     MACStat * worker = new MACStat(s, mac, kickTimeout);
     QThread* thread = new QThread;
@@ -395,39 +395,31 @@ void MainWindow::runThread(std::shared_ptr<QString> s, const QString &mac)
     thread->start();
 }
 
-QSet<QString> *getMACSet(QString *s)
-{
-        QSet<QString> *MACs = new QSet<QString>();
-        QStringList l = s->split('\n');
-        for (int i = 0; i < l.size(); ++i)
-        {
-            if (!l.at(i).contains("Client"))
-            {
-                l.removeAt(i);
-                continue;
-            }
-
-            QStringList list = l.at(i).split(QLatin1Char(','));
-            if (list.size() < MAX_ROW_COUNT_TW2 || MACs->contains(list.at(3)))
-                continue;
-
-            MACs->insert(list.at(3));
-        }
-        *s = l.join('\n');
-        return MACs;
-}
-
 void MainWindow::currentTabChanged(int tab)
 {
     if (tab == 1)
     {
-        QString s;
+        QStringList log;
+        QSet<QString> *MACs = new QSet<QString>();
+
         QString fpath = getLogFile();
         FILE *fp = fopen(fpath.toStdString().c_str(), "r");
         if (fp)
         {
             QTextStream s1(fp, QIODevice::ReadOnly);
-            s = s1.readAll();
+            while (!s1.atEnd())
+            {
+                QString line = s1.readLine();
+                if(!line.contains("Client"))
+                    continue;
+                log << line;
+
+                QStringList list = line.split(QLatin1Char(','));
+                if (list.size() < MAX_ROW_COUNT_TW2 || MACs->contains(list.at(3)))
+                    continue;
+
+                MACs->insert(list.at(3));
+            }
             fclose(fp);
         }
         else
@@ -436,9 +428,7 @@ void MainWindow::currentTabChanged(int tab)
             return;
         }
 
-        QSet<QString> *MACs = getMACSet(&s);
-
-        std::shared_ptr<QString> ptr = std::make_shared<QString>(s);
+        std::shared_ptr<QStringList> ptr = std::make_shared<QStringList>(log);
 
         modelLog->removeRows(0, modelLog->rowCount());
 

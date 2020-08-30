@@ -43,7 +43,7 @@ class MainWindow : public QMainWindow
 
         void VisibleScanMenu(bool);
         const QString getLogFile();
-        void runThread(std::shared_ptr<QString>, const QString &);
+        void runThread(std::shared_ptr<QStringList>, const QString &);
 
     private slots:
         void WifiStart();
