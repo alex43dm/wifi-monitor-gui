@@ -24,9 +24,8 @@ void MACStat::process()
     {
         if (!line.contains(res->mac))
             continue;
+
         QStringList list = line.split(QLatin1Char(','));
-        if (list.size() < MAX_ROW_COUNT_TW2)
-            continue;
 
         cnt++;
         powerSum += list.at(4).toInt();
@@ -45,6 +44,6 @@ void MACStat::process()
     }
     if(cnt == 0) cnt = 1;
     res->powerSum = abs(powerSum) / cnt;
-    emit sendResult(res);
 
+    emit sendResult(res);
 }
