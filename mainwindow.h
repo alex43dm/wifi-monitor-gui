@@ -51,6 +51,7 @@ class MainWindow : public QMainWindow
         void WifiGetStatus();
         void ScanStart();
         void ScanStop();
+        void SetKickTimeOut();
         void slotTableViewSelected(const QItemSelection &selected, const QItemSelection &deselected);
         void currentTabChanged(int);
         void refreshTable();

@@ -42,7 +42,7 @@ void MACStat::process()
 
         res->LastTimeSeen = list.at(0);
     }
-    if(cnt == 0) cnt = 1;
+    if (cnt == 0) cnt = 1;
     res->powerSum = abs(powerSum) / cnt;
 
     emit sendResult(res);

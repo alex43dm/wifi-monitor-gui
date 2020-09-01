@@ -11,6 +11,7 @@
 #include <QChartView>
 #include <QDateTime>
 #include <QThread>
+#include <QInputDialog>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -77,7 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionStop, &QAction::triggered, this, &MainWindow::WifiStop);
     connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::ScanStart);
     connect(ui->actionStop_2, &QAction::triggered, this, &MainWindow::ScanStop);
-
+    connect(ui->actionSet_Kick_TimeOut, &QAction::triggered, this, &MainWindow::SetKickTimeOut);
 
     timer = new QTimer;
     timer->setInterval(timeOut);
@@ -128,6 +129,19 @@ MainWindow::~MainWindow()
     delete modelLog;
     delete model;
     delete ui;
+}
+
+void MainWindow::SetKickTimeOut()
+{
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("QInputDialog::getInteger()"),
+                                         tr("Kick TimeOut:"), QLineEdit::Normal,
+                                         QString::number(kickTimeout), &ok);
+    if (ok && !text.isEmpty())
+    {
+        kickTimeout = text.toInt();
+        uc->SetKickTimeOut(kickTimeout);
+    }
 }
 
 void MainWindow::VisibleScanMenu(bool hide)
@@ -291,10 +305,9 @@ void MainWindow::handleResults(const QString &s)
 
 void MainWindow::WifiGetStatus()
 {
-    QStringList l = uc->StatustWIFI().split(' ');
-    if (l.size() > 1)
+    if (!uc->Status())
     {
-        if (l[1] == "0")
+        if (uc->wifi_mode == 0)
         {
             VisibleScanMenu(true);
         }
@@ -302,15 +315,24 @@ void MainWindow::WifiGetStatus()
         {
             VisibleScanMenu(false);
         }
-        ui->statusbar->showMessage("wifi interface: " + l[0]);
-        if (l.size() == 3 && l[2] == "1")
+
+        if (uc->scanning == 1)
         {
             timer->start();
         }
+
+
+        if (uc->kick_timeout != kickTimeout)
+        {
+            uc->SetKickTimeOut(kickTimeout);
+        }
+
+        ui->statusbar->showMessage("wifi interface: " + uc->iface);
     }
     else
     {
         VisibleScanMenu(false);
+        ui->statusbar->showMessage("get status error: " + uc->err);
     }
 }
 
@@ -387,8 +409,8 @@ void MainWindow::fillLogTable(MACresult *res)
 
 void MainWindow::runThread(std::shared_ptr<QStringList> s, const QString &mac)
 {
-    MACStat * worker = new MACStat(s, mac, kickTimeout);
-    QThread* thread = new QThread;
+    MACStat *worker = new MACStat(s, mac, kickTimeout);
+    QThread *thread = new QThread;
     worker->moveToThread(thread);
     connect(thread, &QThread::started, worker, &MACStat::process);
     connect(worker, &MACStat::sendResult, this, &MainWindow::fillLogTable);
@@ -410,7 +432,7 @@ void MainWindow::currentTabChanged(int tab)
             while (!s1.atEnd())
             {
                 QString line = s1.readLine();
-                if(!line.contains("Client"))
+                if (!line.contains("Client"))
                     continue;
                 log << line;
 

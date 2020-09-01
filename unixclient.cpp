@@ -9,6 +9,8 @@
 
 #include "unixclient.h"
 
+#include <QStringList>
+
 #define BUF_SIZE 1024
 
 bool UnixClient::cmd(const QString &command)
@@ -46,9 +48,8 @@ bool UnixClient::cmd(const QString &command)
     return false;
 }
 
-const QString UnixClient::cmd_ret(const QString &command)
+bool UnixClient::cmd_ret(const QString &command)
 {
-    QString res;
     struct sockaddr_un address;
 
     err.clear();
@@ -57,7 +58,7 @@ const QString UnixClient::cmd_ret(const QString &command)
     if (sock < 0)
     {
         err =  "Failed create connect socket to " + path;
-        return res;
+        return true;
     }
 
     memset(&address, 0x00, sizeof(address));
@@ -68,14 +69,14 @@ const QString UnixClient::cmd_ret(const QString &command)
     {
         err =  "Failed connect socket to " + path + " errno: " + errno + " : " + strerror(errno);
         close(sock);
-        return res;
+        return true;
     }
 
     if (send(sock, command.toStdString().c_str(), command.size(), 0) < 0)
     {
         err =  "Error writing to socket " + path + " errno: " + errno + " : " + strerror(errno);
         close(sock);
-        return res;
+        return true;
     }
     char *buf = nullptr;
     buf = (char *)malloc(BUF_SIZE);
@@ -88,7 +89,23 @@ const QString UnixClient::cmd_ret(const QString &command)
         memset(buf, 0x00, BUF_SIZE);
         if (recv(sock, buf, BUF_SIZE, 0) != -1)
         {
-            res = QString(buf);
+            QStringList l = QString(buf).split(' ');
+            if (l.size() > 1)
+            {
+                iface = l[0];
+            }
+            if (l.size() >= 2)
+            {
+                wifi_mode = l[1].toInt();
+            }
+            if (l.size() >= 3)
+            {
+                scanning = l[2].toInt();
+            }
+            if (l.size() >= 4)
+            {
+                kick_timeout = l[3].toInt();
+            }
         }
         else
         {
@@ -97,5 +114,6 @@ const QString UnixClient::cmd_ret(const QString &command)
         free(buf);
     }
     close(sock);
-    return res;
+
+    return false;
 }

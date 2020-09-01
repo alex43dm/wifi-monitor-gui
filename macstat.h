@@ -10,25 +10,25 @@
 
 struct MACresult
 {
-   QString mac;
-   QString FirstTimeSeen;
-   QString LastTimeSeen;
-   float powerSum;
-   size_t numberInRange;
+    QString mac;
+    QString FirstTimeSeen;
+    QString LastTimeSeen;
+    float powerSum;
+    size_t numberInRange;
 };
 
 class MACStat : public QObject
 {
-    Q_OBJECT
-   std::shared_ptr<QStringList> buf;
-   MACresult *res;
-   int kickTimeout;
-public:
-    MACStat(std::shared_ptr<QStringList>, const QString &, int);
-public slots:
-    void process();
- signals:
-    void sendResult(MACresult *);
+        Q_OBJECT
+        std::shared_ptr<QStringList> buf;
+        MACresult *res;
+        int kickTimeout;
+    public:
+        MACStat(std::shared_ptr<QStringList>, const QString &, int);
+    public slots:
+        void process();
+    signals:
+        void sendResult(MACresult *);
 };
 
 int64_t dateTimeDiff(const QString &firstStr, const QString &lastStr);
