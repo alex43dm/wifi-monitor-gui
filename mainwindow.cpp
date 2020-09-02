@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->setSortingEnabled(true);
     model = new QStandardItemModel();
     ui->tableView->setModel(model);
     model->sort(0, Qt::AscendingOrder);
@@ -60,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     model->setHorizontalHeaderItem(4, new QStandardItem("Associated"));
 
     ui->tableViewLog->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableViewLog->setSortingEnabled(true);
     modelLog = new QStandardItemModel();
     ui->tableViewLog->setModel(modelLog);
     modelLog->sort(0, Qt::AscendingOrder);
